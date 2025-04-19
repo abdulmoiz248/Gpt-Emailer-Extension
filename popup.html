@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Send Email</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      width: 360px;
+      height: 280px;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-4">
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Send Email</h2>
+    
+    <div id="email-details" class="mb-6">
+      <div class="mb-2">
+        <span class="font-semibold">To:</span>
+        <span id="recipient" class="ml-2 text-gray-700"></span>
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold">Subject:</span>
+        <span id="subject" class="ml-2 text-gray-700"></span>
+      </div>
+      <div>
+        <span class="font-semibold">Body:</span>
+        <div id="body" class="mt-1 p-2 bg-gray-50 rounded text-gray-700 text-sm max-h-24 overflow-y-auto"></div>
+      </div>
+    </div>
+    
+    <div class="mb-4">
+      <h3 class="font-semibold mb-2">Choose account:</h3>
+      <div class="flex flex-col space-y-2">
+        <button id="personal-account" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition">
+          Personal Account
+        </button>
+        <button id="education-account" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition">
+          Education Account
+        </button>
+      </div>
+    </div>
+    
+    <div class="mt-4 text-xs text-gray-500">
+      <p class="mb-1">Need to set up or change accounts?</p>
+      <div class="flex space-x-2">
+        <button id="setup-personal" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-xs">
+          Set up Personal
+        </button>
+        <button id="setup-education" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-xs">
+          Set up Education
+        </button>
+      </div>
+    </div>
+
+    <div class="text-center text-sm text-gray-500">
+      <p>You'll need to authorize this extension to send emails on your behalf.</p>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>

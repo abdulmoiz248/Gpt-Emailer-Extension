@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Email Sender Options</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+    <h1 class="text-2xl font-bold mb-6 text-gray-800">Account Settings</h1>
+    
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold mb-3">Personal Account</h2>
+      <div class="flex items-center mb-2">
+        <span class="font-medium mr-2">Status:</span>
+        <span id="personal-status" class="text-gray-600">Not configured</span>
+      </div>
+      <div class="flex items-center mb-3">
+        <span class="font-medium mr-2">Email:</span>
+        <span id="personal-email" class="text-gray-600">-</span>
+      </div>
+      <button id="setup-personal" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition">
+        Configure Personal Account
+      </button>
+      <button id="remove-personal" class="ml-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition hidden">
+        Remove
+      </button>
+    </div>
+    
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold mb-3">Education Account</h2>
+      <div class="flex items-center mb-2">
+        <span class="font-medium mr-2">Status:</span>
+        <span id="education-status" class="text-gray-600">Not configured</span>
+      </div>
+      <div class="flex items-center mb-3">
+        <span class="font-medium mr-2">Email:</span>
+        <span id="education-email" class="text-gray-600">-</span>
+      </div>
+      <button id="setup-education" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition">
+        Configure Education Account
+      </button>
+      <button id="remove-education" class="ml-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition hidden">
+        Remove
+      </button>
+    </div>
+    
+    <div class="mt-8 pt-4 border-t border-gray-200">
+      <h2 class="text-lg font-semibold mb-3">Extension Settings</h2>
+      <div class="flex items-center mb-4">
+        <input type="checkbox" id="auto-detect" class="mr-2">
+        <label for="auto-detect">Automatically detect sendEmail patterns in ChatGPT</label>
+      </div>
+      <button id="save-settings" class="bg-gray-800 hover:bg-gray-900 text-white py-2 px-4 rounded transition">
+        Save Settings
+      </button>
+      <div id="save-status" class="mt-2 text-green-500 hidden">Settings saved!</div>
+    </div>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>
