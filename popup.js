@@ -1,106 +1,91 @@
+// Popup script
 document.addEventListener("DOMContentLoaded", () => {
-  chrome.storage.local.get(["pendingEmail"], (result) => {
-    if (result.pendingEmail) {
-      const emailData = result.pendingEmail
+  console.log("Popup loaded")
 
-      // Display email details
-      document.getElementById("recipient").textContent = emailData.to
-      document.getElementById("subject").textContent = emailData.subject
-      document.getElementById("body").textContent = emailData.body
+  // Update account status
+  updateAccountStatus()
 
-      // Set up account selection buttons
-      document.getElementById("personal-account").addEventListener("click", () => {
-        sendEmail("personal", emailData)
-      })
-
-      document.getElementById("education-account").addEventListener("click", () => {
-        sendEmail("education", emailData)
-      })
-
-      // Set up account configuration buttons
-      document.getElementById("setup-personal").addEventListener("click", () => {
-        setupAccount("personal")
-      })
-
-      document.getElementById("setup-education").addEventListener("click", () => {
-        setupAccount("education")
-      })
-    } else {
-      // No pending email, show error
-      document.body.innerHTML = `
-        <div class="p-4 text-center">
-          <p class="text-red-500">No email data found. Please try again.</p>
-        </div>
-      `
+  // Check if we're on a ChatGPT page
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const statusMessage = document.getElementById("status-message")
+    if (tabs[0] && !(tabs[0].url.includes("chat.openai.com") || tabs[0].url.includes("chatgpt.com"))) {
+      statusMessage.textContent = "Please navigate to ChatGPT to use this extension"
+      statusMessage.className = "status-message info"
+      statusMessage.style.display = "block"
     }
+  })
+
+  // Set up button listeners
+  document.getElementById("options-btn").addEventListener("click", () => {
+    chrome.runtime.openOptionsPage()
+  })
+
+  // Manually trigger email detection
+  document.getElementById("detect-btn").addEventListener("click", () => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0] && (tabs[0].url.includes("chat.openai.com") || tabs[0].url.includes("chatgpt.com"))) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: "manualDetection" }, (response) => {
+          if (response && response.success) {
+            showStatus("Email detection triggered!", "success")
+          } else {
+            showStatus("Failed to trigger detection. Try reinjecting the script.", "error")
+          }
+        })
+      } else {
+        showStatus("Please navigate to ChatGPT to use this feature", "error")
+      }
+    })
+  })
+
+  document.getElementById("inject-btn").addEventListener("click", () => {
+    chrome.runtime.sendMessage({ action: "injectContentScript" }, (response) => {
+      if (response && response.success) {
+        showStatus("Content script injected successfully", "success")
+      } else {
+        showStatus(response?.message || "Failed to inject script", "error")
+      }
+    })
   })
 })
 
-// Send email with selected account
-function sendEmail(account, emailData) {
-  chrome.runtime.sendMessage({
-    action: "sendEmail",
-    account: account,
-    emailData: emailData,
+// Function to update account status
+function updateAccountStatus() {
+  chrome.storage.sync.get(["personalAccount", "educationAccount"], (result) => {
+    // Update personal account status
+    const personalStatus = document.getElementById("personal-status")
+    const personalEmail = document.getElementById("personal-email")
+
+    if (result.personalAccount && result.personalAccount.email) {
+      personalStatus.className = "status-indicator configured"
+      personalEmail.textContent = result.personalAccount.email
+    } else {
+      personalStatus.className = "status-indicator not-configured"
+      personalEmail.textContent = "Not configured"
+    }
+
+    // Update education account status
+    const educationStatus = document.getElementById("education-status")
+    const educationEmail = document.getElementById("education-email")
+
+    if (result.educationAccount && result.educationAccount.email) {
+      educationStatus.className = "status-indicator configured"
+      educationEmail.textContent = result.educationAccount.email
+    } else {
+      educationStatus.className = "status-indicator not-configured"
+      educationEmail.textContent = "Not configured"
+    }
   })
-
-  // Show sending status
-  document.body.innerHTML = `
-    <div class="p-4 text-center">
-      <p class="text-blue-500">Sending email from ${account} account...</p>
-      <p class="mt-2">You can close this window. A notification will appear when complete.</p>
-    </div>
-  `
-
-  // Close popup after a delay
-  setTimeout(() => {
-    window.close()
-  }, 2000)
 }
 
-// Add this function to handle account setup
-function setupAccount(account) {
-  // Show setup status
-  document.body.innerHTML = `
-    <div class="p-4 text-center">
-      <p class="text-blue-500">Setting up ${account} account...</p>
-      <p class="mt-2">You'll need to authorize access to your Google account.</p>
-    </div>
-  `
+// Function to show status message
+function showStatus(message, type) {
+  const statusElement = document.getElementById("status-message")
+  statusElement.textContent = message
+  statusElement.className = `status-message ${type}`
+  statusElement.style.display = "block"
 
-  // Send message to background script to set up the account
-  chrome.runtime.sendMessage(
-    {
-      action: "setupAccount",
-      account: account,
-    },
-    (response) => {
-      if (response && response.success) {
-        document.body.innerHTML = `
-        <div class="p-4 text-center">
-          <p class="text-green-500">${account} account set up successfully!</p>
-          <button id="back-button" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded">
-            Back to Email
-          </button>
-        </div>
-      `
-        document.getElementById("back-button").addEventListener("click", () => {
-          window.location.reload()
-        })
-      } else {
-        document.body.innerHTML = `
-        <div class="p-4 text-center">
-          <p class="text-red-500">Failed to set up ${account} account.</p>
-          <p class="mt-1 text-sm">${response?.error || "Unknown error"}</p>
-          <button id="back-button" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded">
-            Back to Email
-          </button>
-        </div>
-      `
-        document.getElementById("back-button").addEventListener("click", () => {
-          window.location.reload()
-        })
-      }
-    },
-  )
+  // Hide after 3 seconds
+  setTimeout(() => {
+    statusElement.style.display = "none"
+  }, 3000)
 }

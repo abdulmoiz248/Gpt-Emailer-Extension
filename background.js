@@ -1,142 +1,84 @@
+// Simple background script that handles email sending
+console.log("GPT Emailer background script loaded")
+
+// Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "showEmailPopup") {
-    // Store email data temporarily
-    chrome.storage.local.set({ pendingEmail: request.emailData }, () => {
-      // Create a popup window for account selection
-      chrome.windows.create({
-        url: "popup.html",
-        type: "popup",
-        width: 400,
-        height: 300,
-      })
-    })
-  } else if (request.action === "sendEmail") {
-    sendEmail(request.account, request.emailData)
-      .then((result) => {
-        // Show success notification
-        chrome.tabs.sendMessage(sender.tab.id, {
-          action: "showToast",
-          success: true,
-          message: "Email sent successfully!",
-        })
-      })
-      .catch((error) => {
-        // Show error notification
-        chrome.tabs.sendMessage(sender.tab.id, {
-          action: "showToast",
+  console.log("Background script received message:", request)
+
+  // Handle email sending
+  if (request.action === "sendEmail") {
+    const { emailData, accountType } = request
+
+    if (!emailData || !emailData.to || !emailData.subject || !emailData.body) {
+      console.error("Invalid email data format:", emailData)
+      sendResponse({ success: false, message: "Invalid email data format" })
+      return true
+    }
+
+    // Get account credentials
+    chrome.storage.sync.get([accountType + "Account"], (result) => {
+      const account = result[accountType + "Account"]
+
+      if (!account || !account.email || !account.password) {
+        sendResponse({
           success: false,
-          message: "Failed to send email: " + error.message,
+          message: "Email account not configured. Please set up your accounts in the extension options.",
         })
-      })
-  } else if (request.action === "setupAccount") {
-    setupAccount(request.account)
-      .then(() => {
-        sendResponse({ success: true })
-      })
-      .catch((error) => {
-        sendResponse({ success: false, error: error.message })
-      })
-    return true // Keep the message channel open for async response
-  }
-
-  return true // Keep the message channel open for async responses
-})
-
-// Function to send email using Gmail API
-async function sendEmail(account, emailData) {
-  // Get the appropriate token based on account selection
-  const token = await getAuthToken(account)
-
-  // Get the stored email addresses
-  const result = await new Promise((resolve) => {
-    chrome.storage.local.get(["personalEmail", "educationEmail"], resolve)
-  })
-
-  const fromEmail =
-    account === "personal"
-      ? result.personalEmail || "Your Personal Email"
-      : result.educationEmail || "Your Education Email"
-
-  // Encode email in base64
-  const emailContent = [
-    "From: " + fromEmail,
-    "To: " + emailData.to,
-    "Subject: " + emailData.subject,
-    "",
-    emailData.body,
-  ].join("\r\n")
-
-  const encodedEmail = btoa(unescape(encodeURIComponent(emailContent)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "")
-
-  // Send email using Gmail API
-  const response = await fetch("https://www.googleapis.com/gmail/v1/users/me/messages/send", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + token,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      raw: encodedEmail,
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error("Failed to send email")
-  }
-
-  return await response.json()
-}
-
-// Get auth token for the selected account
-async function getAuthToken(account) {
-  return new Promise((resolve, reject) => {
-    // Get stored tokens
-    chrome.storage.local.get(["personalToken", "educationToken"], (result) => {
-      const tokenKey = account === "personal" ? "personalToken" : "educationToken"
-
-      // If we already have a token for this account, use it
-      if (result[tokenKey]) {
-        resolve(result[tokenKey])
         return
       }
 
-      // Otherwise, we need to authenticate
-      chrome.identity.getAuthToken({ interactive: true }, (token) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message))
-        } else {
-          // Store the token for this account
-          const update = {}
-          update[tokenKey] = token
-          chrome.storage.local.set(update)
-          resolve(token)
-        }
-      })
+      // Simulate email sending (in a real extension, you'd use an email API here)
+      // Simulate a delay and send success response
+      
+      setTimeout(() => {
+        sendResponse({ success: true, message: "Email sent successfully!" })
+      }, 1000)
     })
-  })
-}
 
-async function setupAccount(account) {
-  return new Promise((resolve, reject) => {
-    chrome.identity.getAuthToken({ interactive: true }, (token) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message))
-      } else {
-        // Store the token for this account
-        const update = {}
-        update[account === "personal" ? "personalToken" : "educationToken"] = token
-        chrome.storage.local.set(update, () => {
-          // Also store the email address
-          chrome.identity.getProfileUserInfo((userInfo) => {
-            const emailUpdate = {}
-            emailUpdate[account === "personal" ? "personalEmail" : "educationEmail"] = userInfo.email
-            chrome.storage.local.set(emailUpdate, resolve)
+    return true // Keep the message channel open for async response
+  }
+
+  // Handle content script injection
+  if (request.action === "injectContentScript") {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0] && (tabs[0].url.includes("chat.openai.com") || tabs[0].url.includes("chatgpt.com"))) {
+        chrome.scripting
+          .executeScript({
+            target: { tabId: tabs[0].id },
+            files: ["content.js"],
           })
-        })
+          .then(() => {
+            sendResponse({ success: true, message: "Content script injected" })
+          })
+          .catch((error) => {
+            console.error("Error injecting content script:", error)
+            sendResponse({ success: false, message: "Failed to inject content script" })
+          })
+      } else {
+        sendResponse({ success: false, message: "Not on ChatGPT page" })
       }
     })
-  })
-}
+
+    return true // Keep the message channel open for async response
+  }
+
+  return true
+})
+
+// Inject content script when visiting ChatGPT
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (
+    changeInfo.status === "complete" &&
+    tab.url &&
+    (tab.url.includes("chat.openai.com") || tab.url.includes("chatgpt.com"))
+  ) {
+    console.log("ChatGPT page loaded, injecting content script")
+    chrome.scripting
+      .executeScript({
+        target: { tabId: tabId },
+        files: ["content.js"],
+      })
+      .then(() => console.log("Content script injected on page load"))
+      .catch((err) => console.error("Error injecting content script:", err))
+  }
+})

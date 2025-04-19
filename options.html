@@ -1,61 +1,163 @@
-<!DOCTYPE html>
-<html lang="en">
+&lt;!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChatGPT Email Sender Options</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>GPT Emailer Options</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 24px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      color: #10a37f;
+      margin-top: 0;
+      font-size: 24px;
+    }
+    
+    .account-section {
+      margin-bottom: 24px;
+      padding: 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+    
+    .account-section h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #333;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+    
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    button {
+      background-color: #10a37f;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #0d8c6d;
+    }
+    
+    .status-message {
+      margin-top: 16px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .success {
+      background-color: #e6f7f0;
+      color: #10a37f;
+      border: 1px solid #10a37f;
+    }
+    
+    .error {
+      background-color: #ffebee;
+      color: #e53935;
+      border: 1px solid #e53935;
+    }
+    
+    .instructions {
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #f0f7ff;
+      border-radius: 4px;
+      border-left: 4px solid #2196f3;
+    }
+    
+    pre {
+      background-color: #f0f0f0;
+      padding: 12px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-    <h1 class="text-2xl font-bold mb-6 text-gray-800">Account Settings</h1>
+<body>
+  <div class="container">
+    <h1>GPT Emailer Settings</h1>
     
-    <div class="mb-6">
-      <h2 class="text-lg font-semibold mb-3">Personal Account</h2>
-      <div class="flex items-center mb-2">
-        <span class="font-medium mr-2">Status:</span>
-        <span id="personal-status" class="text-gray-600">Not configured</span>
+    <div class="account-section">
+      <h2>Personal Email Account</h2>
+      <div class="form-group">
+        <label for="personal-email">Email Address:</label>
+        <input type="email" id="personal-email" placeholder="your.name@gmail.com">
       </div>
-      <div class="flex items-center mb-3">
-        <span class="font-medium mr-2">Email:</span>
-        <span id="personal-email" class="text-gray-600">-</span>
+      <div class="form-group">
+        <label for="personal-password">App Password:</label>
+        <input type="password" id="personal-password" placeholder="Your app password">
       </div>
-      <button id="setup-personal" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition">
-        Configure Personal Account
-      </button>
-      <button id="remove-personal" class="ml-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition hidden">
-        Remove
-      </button>
+      <button id="save-personal">Save Personal Account</button>
     </div>
     
-    <div class="mb-6">
-      <h2 class="text-lg font-semibold mb-3">Education Account</h2>
-      <div class="flex items-center mb-2">
-        <span class="font-medium mr-2">Status:</span>
-        <span id="education-status" class="text-gray-600">Not configured</span>
+    <div class="account-section">
+      <h2>Education Email Account</h2>
+      <div class="form-group">
+        <label for="education-email">Email Address:</label>
+        <input type="email" id="education-email" placeholder="your.name@university.edu">
       </div>
-      <div class="flex items-center mb-3">
-        <span class="font-medium mr-2">Email:</span>
-        <span id="education-email" class="text-gray-600">-</span>
+      <div class="form-group">
+        <label for="education-password">App Password:</label>
+        <input type="password" id="education-password" placeholder="Your app password">
       </div>
-      <button id="setup-education" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition">
-        Configure Education Account
-      </button>
-      <button id="remove-education" class="ml-2 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition hidden">
-        Remove
-      </button>
+      <button id="save-education">Save Education Account</button>
     </div>
     
-    <div class="mt-8 pt-4 border-t border-gray-200">
-      <h2 class="text-lg font-semibold mb-3">Extension Settings</h2>
-      <div class="flex items-center mb-4">
-        <input type="checkbox" id="auto-detect" class="mr-2">
-        <label for="auto-detect">Automatically detect sendEmail patterns in ChatGPT</label>
-      </div>
-      <button id="save-settings" class="bg-gray-800 hover:bg-gray-900 text-white py-2 px-4 rounded transition">
-        Save Settings
-      </button>
-      <div id="save-status" class="mt-2 text-green-500 hidden">Settings saved!</div>
+    <div id="status-message" class="status-message"></div>
+    
+    <div class="instructions">
+      <h3>How to Use</h3>
+      <p>
+        1. Set up your email accounts above.<br>
+        2. When chatting with ChatGPT, use the keyword <code>sendEmail</code> followed by a JSON code block:
+      </p>
+      <pre>sendEmail
+```json
+{
+  "to": "recipient@example.com",
+  "subject": "Your Subject",
+  "body": "Your email content here"
+}
+```</pre>
+      <p>3. The extension will detect this format and prompt you to choose which account to send from.</p>
+      <p><strong>Note:</strong> For Gmail accounts, you'll need to use an App Password. <a href="https://support.google.com/accounts/answer/185833" target="_blank">Learn how to create one</a>.</p>
     </div>
   </div>
   

@@ -1,98 +1,63 @@
+// Options page script
 document.addEventListener("DOMContentLoaded", () => {
-  // Load current account settings
-  loadAccountSettings()
+  console.log("Options page loaded")
 
-  // Load extension settings
-  loadExtensionSettings()
+  // Load saved accounts
+  loadAccounts()
 
-  // Set up event listeners
-  document.getElementById("setup-personal").addEventListener("click", () => {
-    setupAccount("personal")
+  // Set up save buttons
+  document.getElementById("save-personal").addEventListener("click", () => {
+    saveAccount("personal")
   })
 
-  document.getElementById("setup-education").addEventListener("click", () => {
-    setupAccount("education")
+  document.getElementById("save-education").addEventListener("click", () => {
+    saveAccount("education")
   })
-
-  document.getElementById("remove-personal").addEventListener("click", () => {
-    removeAccount("personal")
-  })
-
-  document.getElementById("remove-education").addEventListener("click", () => {
-    removeAccount("education")
-  })
-
-  document.getElementById("save-settings").addEventListener("click", saveSettings)
 })
 
-// Load account settings
-function loadAccountSettings() {
-  chrome.storage.local.get(["personalToken", "educationToken", "personalEmail", "educationEmail"], (result) => {
-    // Update personal account info
-    if (result.personalToken && result.personalEmail) {
-      document.getElementById("personal-status").textContent = "Configured"
-      document.getElementById("personal-status").className = "text-green-600"
-      document.getElementById("personal-email").textContent = result.personalEmail
-      document.getElementById("remove-personal").classList.remove("hidden")
+// Function to load saved accounts
+function loadAccounts() {
+  chrome.storage.sync.get(["personalAccount", "educationAccount"], (result) => {
+    if (result.personalAccount) {
+      document.getElementById("personal-email").value = result.personalAccount.email || ""
+      document.getElementById("personal-password").value = result.personalAccount.password || ""
     }
 
-    // Update education account info
-    if (result.educationToken && result.educationEmail) {
-      document.getElementById("education-status").textContent = "Configured"
-      document.getElementById("education-status").className = "text-green-600"
-      document.getElementById("education-email").textContent = result.educationEmail
-      document.getElementById("remove-education").classList.remove("hidden")
+    if (result.educationAccount) {
+      document.getElementById("education-email").value = result.educationAccount.email || ""
+      document.getElementById("education-password").value = result.educationAccount.password || ""
     }
   })
 }
 
-// Load extension settings
-function loadExtensionSettings() {
-  chrome.storage.local.get(["autoDetect"], (result) => {
-    document.getElementById("auto-detect").checked = result.autoDetect !== false // Default to true
+// Function to save account
+function saveAccount(type) {
+  const email = document.getElementById(`${type}-email`).value
+  const password = document.getElementById(`${type}-password`).value
+
+  if (!email || !password) {
+    showStatus("Please enter both email and password", "error")
+    return
+  }
+
+  const account = { email, password }
+  const data = {}
+  data[`${type}Account`] = account
+
+  chrome.storage.sync.set(data, () => {
+    showStatus(`${type.charAt(0).toUpperCase() + type.slice(1)} account saved successfully`, "success")
   })
 }
 
-// Set up an account
-function setupAccount(account) {
-  chrome.runtime.sendMessage(
-    {
-      action: "setupAccount",
-      account: account,
-    },
-    (response) => {
-      if (response && response.success) {
-        // Reload account settings to show the updated info
-        loadAccountSettings()
-      } else {
-        alert(`Failed to set up ${account} account: ${response?.error || "Unknown error"}`)
-      }
-    },
-  )
-}
+// Function to show status message
+function showStatus(message, type) {
+  const statusElement = document.getElementById("status-message")
+  statusElement.textContent = message
+  statusElement.className = `status-message ${type}`
+  statusElement.style.display = "block"
 
-// Remove an account
-function removeAccount(account) {
-  const tokenKey = account === "personal" ? "personalToken" : "educationToken"
-  const emailKey = account === "personal" ? "personalEmail" : "educationEmail"
-
-  chrome.storage.local.remove([tokenKey, emailKey], () => {
-    // Reload account settings to show the updated info
-    loadAccountSettings()
-  })
-}
-
-// Save extension settings
-function saveSettings() {
-  const autoDetect = document.getElementById("auto-detect").checked
-
-  chrome.storage.local.set({ autoDetect }, () => {
-    const saveStatus = document.getElementById("save-status")
-    saveStatus.classList.remove("hidden")
-
-    // Hide the status message after 2 seconds
-    setTimeout(() => {
-      saveStatus.classList.add("hidden")
-    }, 2000)
-  })
+  // Hide after 3 seconds
+  setTimeout(() => {
+    statusElement.style.display = "none"
+  }, 3000)
 }

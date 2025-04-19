@@ -1,65 +1,156 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Send Email</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>GPT Emailer</title>
   <style>
     body {
-      width: 360px;
-      height: 280px;
-      overflow: hidden;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      width: 320px;
+      color: #333;
+    }
+    
+    h1 {
+      color: #10a37f;
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 16px;
+    }
+    
+    .status-container {
+      margin-bottom: 16px;
+      padding: 12px;
+      border-radius: 4px;
+      background-color: #f5f5f5;
+    }
+    
+    .account-status {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    
+    .configured {
+      background-color: #4caf50;
+    }
+    
+    .not-configured {
+      background-color: #f44336;
+    }
+    
+    .account-label {
+      font-weight: bold;
+    }
+    
+    .account-email {
+      margin-left: 8px;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .instructions {
+      margin-top: 16px;
+      padding: 12px;
+      background-color: #f0f7ff;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    pre {
+      background-color: #e6e6e6;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    button {
+      background-color: #10a37f;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    button:hover {
+      background-color: #0d8c6d;
+    }
+    
+    .status-message {
+      margin-top: 12px;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    .success {
+      background-color: #e6f7f0;
+      color: #10a37f;
+      border: 1px solid #10a37f;
+    }
+    
+    .error {
+      background-color: #ffebee;
+      color: #e53935;
+      border: 1px solid #e53935;
     }
   </style>
 </head>
-<body class="bg-gray-100 p-4">
-  <div class="bg-white rounded-lg shadow-md p-6">
-    <h2 class="text-xl font-bold mb-4 text-gray-800">Send Email</h2>
-    
-    <div id="email-details" class="mb-6">
-      <div class="mb-2">
-        <span class="font-semibold">To:</span>
-        <span id="recipient" class="ml-2 text-gray-700"></span>
-      </div>
-      <div class="mb-2">
-        <span class="font-semibold">Subject:</span>
-        <span id="subject" class="ml-2 text-gray-700"></span>
-      </div>
-      <div>
-        <span class="font-semibold">Body:</span>
-        <div id="body" class="mt-1 p-2 bg-gray-50 rounded text-gray-700 text-sm max-h-24 overflow-y-auto"></div>
-      </div>
+<body>
+  <h1>GPT Emailer</h1>
+  
+  <div class="status-container">
+    <div class="account-status">
+      <div id="personal-status" class="status-indicator not-configured"></div>
+      <span class="account-label">Personal:</span>
+      <span id="personal-email" class="account-email">Not configured</span>
     </div>
     
-    <div class="mb-4">
-      <h3 class="font-semibold mb-2">Choose account:</h3>
-      <div class="flex flex-col space-y-2">
-        <button id="personal-account" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition">
-          Personal Account
-        </button>
-        <button id="education-account" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition">
-          Education Account
-        </button>
-      </div>
-    </div>
-    
-    <div class="mt-4 text-xs text-gray-500">
-      <p class="mb-1">Need to set up or change accounts?</p>
-      <div class="flex space-x-2">
-        <button id="setup-personal" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-xs">
-          Set up Personal
-        </button>
-        <button id="setup-education" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-1 px-2 rounded text-xs">
-          Set up Education
-        </button>
-      </div>
-    </div>
-
-    <div class="text-center text-sm text-gray-500">
-      <p>You'll need to authorize this extension to send emails on your behalf.</p>
+    <div class="account-status">
+      <div id="education-status" class="status-indicator not-configured"></div>
+      <span class="account-label">Education:</span>
+      <span id="education-email" class="account-email">Not configured</span>
     </div>
   </div>
+  
+  <div class="instructions">
+    <p>To send an email, type <code>sendEmail</code> in ChatGPT followed by:</p>
+    <pre>```json
+{
+  "to": "recipient@example.com",
+  "subject": "Your Subject",
+  "body": "Your email content"
+}
+```</pre>
+  </div>
+  
+  <div class="button-container">
+    <button id="options-btn">Configure Accounts</button>
+    <button id="detect-btn">Detect Email Now</button>
+    <button id="inject-btn">Reinject Script</button>
+  </div>
+  
+  <div id="status-message" class="status-message"></div>
   
   <script src="popup.js"></script>
 </body>
