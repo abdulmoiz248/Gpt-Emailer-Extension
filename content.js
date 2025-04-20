@@ -1,13 +1,20 @@
 // GPT Emailer Content Script
-console.log("GPT Emailer content script loaded")
+console.log("GPT Emailer content script loaded v5")
 
-// Track popup state
-let popupActive = false
-let emailDetectionActive = true
+// Global variables for state management
+let isDetectionEnabled = true
+let lastProcessedContent = ""
+let lastEmailSentTimestamp = 0
+const DETECTION_COOLDOWN = 15000 // 15 seconds cooldown after sending email
 
 // Function to detect and extract email data from ChatGPT responses
 function detectEmailData() {
-  if (!emailDetectionActive || popupActive) return
+  // Don't detect if detection is disabled
+  if (!isDetectionEnabled) return
+
+  // Don't detect if we recently sent an email (cooldown period)
+  const now = Date.now()
+  if (now - lastEmailSentTimestamp < DETECTION_COOLDOWN) return
 
   console.log("Checking for email data in page")
 
@@ -17,6 +24,16 @@ function detectEmailData() {
   )
 
   let foundEmailData = false
+  let currentPageContent = ""
+
+  messages.forEach((message) => {
+    currentPageContent += message.textContent || ""
+  })
+
+  // If we've already processed this exact content, skip
+  if (currentPageContent === lastProcessedContent) {
+    return
+  }
 
   messages.forEach((message) => {
     if (foundEmailData) return
@@ -48,6 +65,8 @@ function detectEmailData() {
 
           if (emailData.to && emailData.subject && emailData.body) {
             foundEmailData = true
+            lastProcessedContent = currentPageContent
+
             // Store the email data temporarily
             chrome.storage.local.set({ currentEmailData: emailData }, () => {
               console.log("Email data stored in local storage")
@@ -75,6 +94,8 @@ function detectEmailData() {
 
               if (emailData.to && emailData.subject && emailData.body) {
                 foundEmailData = true
+                lastProcessedContent = currentPageContent
+
                 chrome.storage.local.set({ currentEmailData: emailData }, () => {
                   console.log("Email data stored in local storage")
                   showAccountSelectionPopup(emailData)
@@ -103,6 +124,8 @@ function detectEmailData() {
           if (emailData.to && emailData.subject && emailData.body) {
             console.log("Found email data in page text:", emailData)
             foundEmailData = true
+            lastProcessedContent = currentPageContent
+
             chrome.storage.local.set({ currentEmailData: emailData }, () => {
               showAccountSelectionPopup(emailData)
             })
@@ -117,9 +140,6 @@ function detectEmailData() {
 
 // Function to show the account selection popup
 function showAccountSelectionPopup(emailData) {
-  if (popupActive) return
-  popupActive = true
-
   console.log("Showing account selection popup")
 
   // Remove any existing popups
@@ -136,7 +156,10 @@ function showAccountSelectionPopup(emailData) {
   // Create popup content with email preview
   popup.innerHTML = `
     <div class="gpt-emailer-popup-content">
-      <h2>Send Email</h2>
+      <div class="gpt-emailer-popup-header">
+        <h2>Send Email</h2>
+        <button id="gpt-emailer-close-btn" class="gpt-emailer-close-btn">&times;</button>
+      </div>
       
       <div class="gpt-emailer-email-preview">
         <div><strong>To:</strong> ${emailData.to}</div>
@@ -178,8 +201,22 @@ function showAccountSelectionPopup(emailData) {
     })
   }
 
+  const closeBtn = document.getElementById("gpt-emailer-close-btn")
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      closePopup()
+    })
+  }
+
   // Add styles for the popup
   addStyles()
+
+  // Also close popup when clicking outside
+  popup.addEventListener("click", (event) => {
+    if (event.target === popup) {
+      closePopup()
+    }
+  })
 }
 
 function closePopup() {
@@ -187,7 +224,6 @@ function closePopup() {
   if (popup) {
     popup.remove()
   }
-  popupActive = false
 }
 
 // Function to add styles
@@ -204,7 +240,7 @@ function addStyles() {
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.85);
       display: flex;
       justify-content: center;
       align-items: center;
@@ -213,88 +249,139 @@ function addStyles() {
     }
     
     .gpt-emailer-popup-content {
-      background-color: white;
-      padding: 24px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      max-width: 500px;
+      background-color: #ffffff;
+      padding: 28px;
+      border-radius: 12px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+      max-width: 550px;
       width: 90%;
       text-align: center;
+      border: 3px solid #10a37f;
+      position: relative;
+    }
+    
+    .gpt-emailer-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 12px;
     }
     
     .gpt-emailer-popup h2 {
-      margin-top: 0;
+      margin: 0;
+      color: #10a37f;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    
+    .gpt-emailer-close-btn {
+      background: #f0f0f0;
+      border: none;
       color: #333;
-      font-size: 20px;
+      font-size: 28px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    .gpt-emailer-close-btn:hover {
+      background-color: #e0e0e0;
+      color: #000;
+      transform: scale(1.1);
     }
     
     .gpt-emailer-email-preview {
       background-color: #f5f5f5;
-      border-radius: 4px;
-      padding: 12px;
-      margin: 16px 0;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
       text-align: left;
+      border: 1px solid #ddd;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
     
     .gpt-emailer-email-preview div {
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      font-size: 16px;
     }
     
     .gpt-emailer-email-body {
-      max-height: 100px;
+      max-height: 150px;
       overflow-y: auto;
       white-space: pre-wrap;
+      padding: 12px;
+      background-color: #ffffff;
+      border-radius: 6px;
+      border: 1px solid #eee;
     }
     
     .gpt-emailer-account-buttons {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      margin: 20px 0;
+      gap: 14px;
+      margin: 24px 0;
     }
     
     .gpt-emailer-btn {
-      padding: 12px 16px;
+      padding: 16px 20px;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.2s;
+      font-size: 18px;
+      font-weight: bold;
+      transition: all 0.2s;
     }
     
     .gpt-emailer-account-buttons .gpt-emailer-btn {
       background-color: #10a37f;
       color: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
     
     .gpt-emailer-account-buttons .gpt-emailer-btn:hover {
       background-color: #0d8c6d;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     }
     
     .gpt-emailer-cancel-btn {
       background-color: #f0f0f0;
       color: #333;
+      margin-top: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
     .gpt-emailer-cancel-btn:hover {
       background-color: #e0e0e0;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
     
     .gpt-emailer-toast-container {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 30px;
+      right: 30px;
       z-index: 10001;
     }
     
     .gpt-emailer-toast {
-      padding: 12px 16px;
-      margin-top: 10px;
-      border-radius: 4px;
+      padding: 16px 20px;
+      margin-top: 12px;
+      border-radius: 8px;
       color: white;
-      font-size: 14px;
-      max-width: 300px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      font-size: 16px;
+      font-weight: bold;
+      max-width: 350px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
       animation: gpt-emailer-toast-fade-in 0.3s ease-out forwards;
     }
     
@@ -317,7 +404,10 @@ function sendEmailWithSelectedAccount(accountType) {
   console.log(`Sending email with ${accountType} account`)
 
   // Disable detection temporarily to prevent multiple popups
-  emailDetectionActive = false
+  isDetectionEnabled = false
+
+  // Update the timestamp to prevent immediate re-detection
+  lastEmailSentTimestamp = Date.now()
 
   // Get the stored email data
   chrome.storage.local.get(["currentEmailData"], (result) => {
@@ -327,13 +417,16 @@ function sendEmailWithSelectedAccount(accountType) {
       showToast("No email data found. Please try again later.", "error")
       closePopup()
       setTimeout(() => {
-        emailDetectionActive = true
-      }, 2000)
+        isDetectionEnabled = true
+      }, DETECTION_COOLDOWN)
       return
     }
 
     // Close popup before sending to prevent multiple popups
     closePopup()
+
+    // Show sending toast
+    showToast("Sending email...", "info")
 
     // Send message to background script to handle email sending
     chrome.runtime.sendMessage({ action: "sendEmail", emailData, accountType }, (response) => {
@@ -346,10 +439,10 @@ function sendEmailWithSelectedAccount(accountType) {
         showToast(response?.message || "Failed to send email. Please try again.", "error")
       }
 
-      // Re-enable detection after a delay
+      // Re-enable detection after the cooldown period
       setTimeout(() => {
-        emailDetectionActive = true
-      }, 2000)
+        isDetectionEnabled = true
+      }, DETECTION_COOLDOWN)
     })
   })
 }
@@ -376,10 +469,13 @@ function showToast(message, type = "info") {
   // Set background color based on type
   if (type === "success") {
     toast.style.backgroundColor = "#10a37f"
+    toast.style.border = "1px solid #0d8c6d"
   } else if (type === "error") {
     toast.style.backgroundColor = "#e53935"
+    toast.style.border = "1px solid #c62828"
   } else {
     toast.style.backgroundColor = "#2196f3"
+    toast.style.border = "1px solid #1976d2"
   }
 
   // Add toast to container
@@ -412,11 +508,19 @@ document.addEventListener("click", (event) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "manualDetection") {
     console.log("Received manual detection request")
+    // Force detection even if cooldown is active
+    isDetectionEnabled = true
+    lastEmailSentTimestamp = 0
+    lastProcessedContent = "" // Reset processed content to force detection
     detectEmailData()
     sendResponse({ success: true, message: "Manual detection triggered" })
   }
 
   if (request.action === "detectEmail") {
+    // Force detection even if cooldown is active
+    isDetectionEnabled = true
+    lastEmailSentTimestamp = 0
+    lastProcessedContent = "" // Reset processed content to force detection
     detectEmailData()
     sendResponse({ success: true })
   }
@@ -426,10 +530,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Set up a MutationObserver to detect when new messages are added
 const observer = new MutationObserver((mutations) => {
-  // Only check if we're not already showing a popup
-  if (!popupActive && emailDetectionActive) {
-    // Wait a bit for the DOM to settle
-    setTimeout(detectEmailData, 500)
+  // Only check if detection is enabled
+  if (isDetectionEnabled) {
+    // Check if we're in the cooldown period
+    const now = Date.now()
+    if (now - lastEmailSentTimestamp >= DETECTION_COOLDOWN) {
+      // Wait a bit for the DOM to settle
+      setTimeout(detectEmailData, 500)
+    }
   }
 })
 
@@ -440,7 +548,9 @@ observer.observe(document.body, {
 })
 
 // Initial check when the script loads
-setTimeout(detectEmailData, 1000)
+setTimeout(() => {
+  detectEmailData()
+}, 1000)
 
 // Notify that content script is loaded
 chrome.runtime.sendMessage({ action: "contentScriptLoaded" })

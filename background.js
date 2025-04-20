@@ -1,5 +1,8 @@
-// Simple background script that handles email sending
-console.log("GPT Emailer background script loaded")
+// Background script that handles email sending
+console.log("GPT Emailer background script loaded v5")
+
+// We need to load SMTP.js in the background script
+self.importScripts("smtp.js")
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -27,12 +30,51 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return
       }
 
-      // Simulate email sending (in a real extension, you'd use an email API here)
-      // Simulate a delay and send success response
-      
-      setTimeout(() => {
-        sendResponse({ success: true, message: "Email sent successfully!" })
-      }, 1000)
+      // Log the email sending attempt
+      console.log(`Attempting to send email from ${account.email} to ${emailData.to}`)
+      console.log(`Subject: ${emailData.subject}`)
+      console.log(`Body: ${emailData.body}`)
+
+      try {
+        // Actually send the email using SMTP.js
+        Email.send({
+          Host: "smtp.gmail.com",
+          Username: account.email,
+          Password: account.password,
+          To: emailData.to,
+          From: account.email,
+          Subject: emailData.subject,
+          Body: emailData.body,
+        })
+          .then((message) => {
+            console.log("SMTP.js response:", message)
+
+            if (message === "OK") {
+              sendResponse({
+                success: true,
+                message: `Email sent successfully from ${account.email}!`,
+              })
+            } else {
+              sendResponse({
+                success: false,
+                message: "Failed to send email: " + message,
+              })
+            }
+          })
+          .catch((error) => {
+            console.error("Error sending email:", error)
+            sendResponse({
+              success: false,
+              message: "Error sending email: " + (error.message || "Unknown error"),
+            })
+          })
+      } catch (error) {
+        console.error("Exception when sending email:", error)
+        sendResponse({
+          success: false,
+          message: "Exception when sending email: " + (error.message || "Unknown error"),
+        })
+      }
     })
 
     return true // Keep the message channel open for async response
