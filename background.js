@@ -1,8 +1,5 @@
-// Background script that handles email sending
-console.log("GPT Emailer background script loaded v5")
-
-// We need to load SMTP.js in the background script
-self.importScripts("smtp.js")
+// Background script for GPT Emailer
+console.log("GPT Emailer background script loaded v7")
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -33,48 +30,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // Log the email sending attempt
       console.log(`Attempting to send email from ${account.email} to ${emailData.to}`)
       console.log(`Subject: ${emailData.subject}`)
-      console.log(`Body: ${emailData.body}`)
 
-      try {
-        // Actually send the email using SMTP.js
-        Email.send({
-          Host: "smtp.gmail.com",
-          Username: account.email,
-          Password: account.password,
-          To: emailData.to,
-          From: account.email,
-          Subject: emailData.subject,
-          Body: emailData.body,
-        })
-          .then((message) => {
-            console.log("SMTP.js response:", message)
+      // Use fetch API instead of XMLHttpRequest (which doesn't work in service workers)
+      const formData = {
+        Host: "smtp.gmail.com",
+        Username: account.email,
+        Password: account.password,
+        To: emailData.to,
+        From: account.email,
+        Subject: emailData.subject,
+        Body: emailData.body,
+        Action: "Send",
+        nocache: Math.floor(1e6 * Math.random() + 1),
+      }
 
-            if (message === "OK") {
-              sendResponse({
-                success: true,
-                message: `Email sent successfully from ${account.email}!`,
-              })
-            } else {
-              sendResponse({
-                success: false,
-                message: "Failed to send email: " + message,
-              })
-            }
-          })
-          .catch((error) => {
-            console.error("Error sending email:", error)
+      fetch("https://smtpjs.com/v3/smtpjs.aspx?", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => response.text())
+        .then((result) => {
+          console.log("Email sending result:", result)
+
+          if (result === "OK") {
+            sendResponse({
+              success: true,
+              message: `Email sent successfully from ${account.email}!`,
+            })
+          } else {
             sendResponse({
               success: false,
-              message: "Error sending email: " + (error.message || "Unknown error"),
+              message: "Failed to send email: " + result,
             })
-          })
-      } catch (error) {
-        console.error("Exception when sending email:", error)
-        sendResponse({
-          success: false,
-          message: "Exception when sending email: " + (error.message || "Unknown error"),
+          }
         })
-      }
+        .catch((error) => {
+          console.error("Error sending email:", error)
+          sendResponse({
+            success: false,
+            message: "Error sending email: " + (error.message || "Unknown error"),
+          })
+        })
     })
 
     return true // Keep the message channel open for async response

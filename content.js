@@ -1,20 +1,20 @@
 // GPT Emailer Content Script
-console.log("GPT Emailer content script loaded v5")
+console.log("GPT Emailer content script loaded v7")
 
 // Global variables for state management
-let isDetectionEnabled = true
 let lastProcessedContent = ""
 let lastEmailSentTimestamp = 0
+let popupCurrentlyShown = false
 const DETECTION_COOLDOWN = 15000 // 15 seconds cooldown after sending email
 
 // Function to detect and extract email data from ChatGPT responses
 function detectEmailData() {
-  // Don't detect if detection is disabled
-  if (!isDetectionEnabled) return
-
   // Don't detect if we recently sent an email (cooldown period)
   const now = Date.now()
   if (now - lastEmailSentTimestamp < DETECTION_COOLDOWN) return
+
+  // Don't detect if popup is already shown
+  if (popupCurrentlyShown) return
 
   console.log("Checking for email data in page")
 
@@ -142,6 +142,9 @@ function detectEmailData() {
 function showAccountSelectionPopup(emailData) {
   console.log("Showing account selection popup")
 
+  // Set flag to prevent multiple popups
+  popupCurrentlyShown = true
+
   // Remove any existing popups
   const existingPopup = document.getElementById("gpt-emailer-popup")
   if (existingPopup) {
@@ -224,6 +227,12 @@ function closePopup() {
   if (popup) {
     popup.remove()
   }
+
+  // Reset popup flag
+  popupCurrentlyShown = false
+
+  // Set cooldown to prevent immediate re-detection
+  lastEmailSentTimestamp = Date.now()
 }
 
 // Function to add styles
@@ -403,9 +412,6 @@ function addStyles() {
 function sendEmailWithSelectedAccount(accountType) {
   console.log(`Sending email with ${accountType} account`)
 
-  // Disable detection temporarily to prevent multiple popups
-  isDetectionEnabled = false
-
   // Update the timestamp to prevent immediate re-detection
   lastEmailSentTimestamp = Date.now()
 
@@ -416,9 +422,6 @@ function sendEmailWithSelectedAccount(accountType) {
     if (!emailData) {
       showToast("No email data found. Please try again later.", "error")
       closePopup()
-      setTimeout(() => {
-        isDetectionEnabled = true
-      }, DETECTION_COOLDOWN)
       return
     }
 
@@ -438,11 +441,6 @@ function sendEmailWithSelectedAccount(accountType) {
       } else {
         showToast(response?.message || "Failed to send email. Please try again.", "error")
       }
-
-      // Re-enable detection after the cooldown period
-      setTimeout(() => {
-        isDetectionEnabled = true
-      }, DETECTION_COOLDOWN)
     })
   })
 }
@@ -509,18 +507,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "manualDetection") {
     console.log("Received manual detection request")
     // Force detection even if cooldown is active
-    isDetectionEnabled = true
     lastEmailSentTimestamp = 0
     lastProcessedContent = "" // Reset processed content to force detection
+    popupCurrentlyShown = false // Reset popup flag
     detectEmailData()
     sendResponse({ success: true, message: "Manual detection triggered" })
   }
 
   if (request.action === "detectEmail") {
     // Force detection even if cooldown is active
-    isDetectionEnabled = true
     lastEmailSentTimestamp = 0
     lastProcessedContent = "" // Reset processed content to force detection
+    popupCurrentlyShown = false // Reset popup flag
     detectEmailData()
     sendResponse({ success: true })
   }
@@ -530,14 +528,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Set up a MutationObserver to detect when new messages are added
 const observer = new MutationObserver((mutations) => {
-  // Only check if detection is enabled
-  if (isDetectionEnabled) {
-    // Check if we're in the cooldown period
-    const now = Date.now()
-    if (now - lastEmailSentTimestamp >= DETECTION_COOLDOWN) {
-      // Wait a bit for the DOM to settle
-      setTimeout(detectEmailData, 500)
-    }
+  // Check if we're in the cooldown period
+  const now = Date.now()
+  if (now - lastEmailSentTimestamp >= DETECTION_COOLDOWN && !popupCurrentlyShown) {
+    // Wait a bit for the DOM to settle
+    setTimeout(detectEmailData, 500)
   }
 })
 

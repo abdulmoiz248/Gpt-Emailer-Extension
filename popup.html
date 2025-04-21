@@ -13,13 +13,14 @@
     }
     
     h1 {
-      color: #10a37f;
-      font-size: 22px;
+      color: #ff5722;
+      font-size: 24px;
       margin-top: 0;
       margin-bottom: 16px;
       text-align: center;
-      border-bottom: 2px solid #10a37f;
+      border-bottom: 2px solid #ff5722;
       padding-bottom: 10px;
+      text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
     }
     
     .status-container {
@@ -28,6 +29,7 @@
       border-radius: 8px;
       background-color: #ffffff;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
     }
     
     .account-status {
@@ -67,70 +69,70 @@
     .instructions {
       margin-top: 16px;
       padding: 16px;
-      background-color: #f0f7ff;
+      background-color: #fff3e0;
       border-radius: 8px;
       font-size: 14px;
-      border-left: 4px solid #2196f3;
+      border-left: 4px solid #ff9800;
     }
     
     pre {
-      background-color: #f0f0f0;
+      background-color: #f5f5f5;
       padding: 12px;
       border-radius: 6px;
       font-size: 13px;
       overflow-x: auto;
       white-space: pre-wrap;
       margin: 10px 0;
+      border: 1px solid #e0e0e0;
     }
     
     .button-container {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
       margin-top: 20px;
     }
     
     button {
-      background-color: #2563eb;
-      color: white;
+      padding: 14px 16px;
       border: none;
-      padding: 12px 16px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: bold;
       transition: all 0.2s;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      color: white;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.2);
     }
     
     button:hover {
-      background-color: #1d4ed8;
       transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
     }
     
     #options-btn {
-      background-color: #f97316;
+      background-color: #ff5722;
     }
     
     #options-btn:hover {
-      background-color: #ea580c;
+      background-color: #e64a19;
     }
     
     #detect-btn {
-      background-color: #8b5cf6;
+      background-color: #2196f3;
     }
     
     #detect-btn:hover {
-      background-color: #7c3aed;
+      background-color: #1976d2;
     }
     
     #inject-btn {
-      background-color: #ec4899;
+      background-color: #673ab7;
     }
     
     #inject-btn:hover {
-      background-color: #db2777;
+      background-color: #512da8;
     }
     
     .status-message {
@@ -144,21 +146,21 @@
     }
     
     .success {
-      background-color: #e6f7f0;
-      color: #10a37f;
-      border: 1px solid #10a37f;
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #2e7d32;
     }
     
     .error {
       background-color: #ffebee;
-      color: #e53935;
-      border: 1px solid #e53935;
+      color: #c62828;
+      border: 1px solid #c62828;
     }
     
     .info {
       background-color: #e3f2fd;
-      color: #1976d2;
-      border: 1px solid #1976d2;
+      color: #1565c0;
+      border: 1px solid #1565c0;
     }
   </style>
 </head>
