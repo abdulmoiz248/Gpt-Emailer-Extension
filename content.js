@@ -1,141 +1,109 @@
 // GPT Emailer Content Script
-console.log("GPT Emailer content script loaded v7")
+console.log("GPT Emailer content script loaded v10")
 
 // Global variables for state management
-let lastProcessedContent = ""
-let lastEmailSentTimestamp = 0
+const processedMessageIds = new Set() // Track which messages we've already processed
 let popupCurrentlyShown = false
-const DETECTION_COOLDOWN = 15000 // 15 seconds cooldown after sending email
+let processingInProgress = false
+const BACKEND_URL = "http://localhost:3000" // Backend URL to send email data
 
 // Function to detect and extract email data from ChatGPT responses
 function detectEmailData() {
-  // Don't detect if we recently sent an email (cooldown period)
-  const now = Date.now()
-  if (now - lastEmailSentTimestamp < DETECTION_COOLDOWN) return
+  // Don't detect if popup is already shown or processing is in progress
+  if (popupCurrentlyShown || processingInProgress) return
 
-  // Don't detect if popup is already shown
-  if (popupCurrentlyShown) return
-
+  processingInProgress = true
   console.log("Checking for email data in page")
 
-  // Look for elements that might contain the email data
-  const messages = document.querySelectorAll(
-    '.markdown-content, .prose, div[data-message-author-role="assistant"], .text-message, .message-content, pre, code, p, .text-base',
-  )
+  try {
+    // Look for message elements that might contain the email data
+    const messages = document.querySelectorAll(
+      '.markdown-content, .prose, div[data-message-author-role="assistant"], .text-message, .message-content',
+    )
 
-  let foundEmailData = false
-  let currentPageContent = ""
+    messages.forEach((message) => {
+      // Skip if we've already processed this message
+      const messageId = message.id || message.dataset.messageId || getUniqueIdentifier(message)
+      if (processedMessageIds.has(messageId)) return
 
-  messages.forEach((message) => {
-    currentPageContent += message.textContent || ""
-  })
+      const content = message.textContent || ""
 
-  // If we've already processed this exact content, skip
-  if (currentPageContent === lastProcessedContent) {
-    return
-  }
+      // Check if this message contains the sendEmail keyword
+      if (content.includes("sendEmail")) {
+        console.log("Found NEW message with sendEmail keyword")
 
-  messages.forEach((message) => {
-    if (foundEmailData) return
+        // Mark this message as processed immediately to prevent duplicate processing
+        processedMessageIds.add(messageId)
 
-    const content = message.textContent || ""
+        // Try to find JSON in the message
+        const jsonMatch =
+          content.match(/sendEmail\s*```(?:json)?\s*(\{[\s\S]*?\})\s*```/) ||
+          content.match(/sendEmail\s*(\{[\s\S]*?\})/) ||
+          content.match(/```(?:json)?\s*(\{[\s\S]*?"to"[\s\S]*?\})\s*```/)
 
-    // Check if this message contains the sendEmail keyword
-    if (content.includes("sendEmail")) {
-      console.log("Found message with sendEmail keyword")
+        if (jsonMatch && jsonMatch[1]) {
+          try {
+            // Parse the JSON data
+            const jsonStr = jsonMatch[1].trim()
+            console.log("Extracted JSON string:", jsonStr)
 
-      // Try to find JSON in the message
-      // This regex is more flexible to match different JSON formats ChatGPT might produce
-      const jsonMatch =
-        content.match(/sendEmail\s*```(?:json)?\s*(\{[\s\S]*?\})\s*```/) ||
-        content.match(/sendEmail\s*(\{[\s\S]*?\})/) ||
-        content.match(/```(?:json)?\s*(\{[\s\S]*?"to"[\s\S]*?\})\s*```/)
+            // Handle escaped quotes and newlines that might be in the JSON
+            const cleanedJson = jsonStr.replace(/\\"/g, '"').replace(/\\n/g, "\n")
 
-      if (jsonMatch && jsonMatch[1]) {
-        try {
-          // Parse the JSON data
-          const jsonStr = jsonMatch[1].trim()
-          console.log("Extracted JSON string:", jsonStr)
+            const emailData = JSON.parse(cleanedJson)
+            console.log("Parsed email data:", emailData)
 
-          // Handle escaped quotes and newlines that might be in the JSON
-          const cleanedJson = jsonStr.replace(/\\"/g, '"').replace(/\\n/g, "\n")
-
-          const emailData = JSON.parse(cleanedJson)
-          console.log("Parsed email data:", emailData)
-
-          if (emailData.to && emailData.subject && emailData.body) {
-            foundEmailData = true
-            lastProcessedContent = currentPageContent
-
-            // Store the email data temporarily
-            chrome.storage.local.set({ currentEmailData: emailData }, () => {
-              console.log("Email data stored in local storage")
-              // Open the popup to select account
-              showAccountSelectionPopup(emailData)
-            })
+            if (emailData.to && emailData.subject && emailData.body) {
+              // Store the email data temporarily
+              chrome.storage.local.set({ currentEmailData: emailData }, () => {
+                console.log("Email data stored in local storage")
+                // Open the popup to select account
+                showAccountSelectionPopup(emailData)
+              })
+              return // Exit after finding valid email data
+            }
+          } catch (error) {
+            console.error("Error parsing email data:", error)
           }
-        } catch (error) {
-          console.error("Error parsing email data:", error)
-        }
-      } else {
-        console.log("No valid JSON format found in the message")
+        } else {
+          console.log("No valid JSON format found in the message")
 
-        // Try to extract JSON directly from code blocks
-        const codeBlocks = document.querySelectorAll("pre code, code")
+          // Try to extract JSON directly from code blocks
+          const codeBlocks = message.querySelectorAll("pre code, code")
 
-        codeBlocks.forEach((codeBlock) => {
-          if (foundEmailData) return
+          for (const codeBlock of codeBlocks) {
+            const codeText = codeBlock.textContent || ""
+            if (codeText.includes('"to"') && codeText.includes('"subject"') && codeText.includes('"body"')) {
+              try {
+                const emailData = JSON.parse(codeText)
+                console.log("Parsed email data from code block:", emailData)
 
-          const codeText = codeBlock.textContent || ""
-          if (codeText.includes('"to"') && codeText.includes('"subject"') && codeText.includes('"body"')) {
-            try {
-              const emailData = JSON.parse(codeText)
-              console.log("Parsed email data from code block:", emailData)
-
-              if (emailData.to && emailData.subject && emailData.body) {
-                foundEmailData = true
-                lastProcessedContent = currentPageContent
-
-                chrome.storage.local.set({ currentEmailData: emailData }, () => {
-                  console.log("Email data stored in local storage")
-                  showAccountSelectionPopup(emailData)
-                })
+                if (emailData.to && emailData.subject && emailData.body) {
+                  chrome.storage.local.set({ currentEmailData: emailData }, () => {
+                    console.log("Email data stored in local storage")
+                    showAccountSelectionPopup(emailData)
+                  })
+                  return // Exit after finding valid email data
+                }
+              } catch (error) {
+                console.error("Error parsing code block:", error)
               }
-            } catch (error) {
-              console.error("Error parsing code block:", error)
             }
           }
-        })
-      }
-    }
-  })
-
-  if (!foundEmailData) {
-    // Try a more aggressive approach - look for any JSON with email-like structure
-    const allText = document.body.textContent || ""
-    const jsonBlocks = allText.match(/\{[\s\S]*?"to"[\s\S]*?"subject"[\s\S]*?"body"[\s\S]*?\}/g)
-
-    if (jsonBlocks && jsonBlocks.length > 0) {
-      jsonBlocks.forEach((jsonBlock) => {
-        if (foundEmailData) return
-
-        try {
-          const emailData = JSON.parse(jsonBlock)
-          if (emailData.to && emailData.subject && emailData.body) {
-            console.log("Found email data in page text:", emailData)
-            foundEmailData = true
-            lastProcessedContent = currentPageContent
-
-            chrome.storage.local.set({ currentEmailData: emailData }, () => {
-              showAccountSelectionPopup(emailData)
-            })
-          }
-        } catch (error) {
-          // Ignore parsing errors in this aggressive approach
         }
-      })
-    }
+      }
+    })
+  } finally {
+    processingInProgress = false
   }
+}
+
+// Generate a unique identifier for a message element
+function getUniqueIdentifier(element) {
+  // Try to create a unique ID based on content and position
+  const content = element.textContent || ""
+  const position = Array.from(element.parentNode.children).indexOf(element)
+  return `msg_${content.substring(0, 50).replace(/\s+/g, "_")}_${position}`
 }
 
 // Function to show the account selection popup
@@ -186,14 +154,14 @@ function showAccountSelectionPopup(emailData) {
   const personalAccountBtn = document.getElementById("personal-account-btn")
   if (personalAccountBtn) {
     personalAccountBtn.addEventListener("click", () => {
-      sendEmailWithSelectedAccount("personal")
+      sendEmailWithSelectedAccount("personal", emailData)
     })
   }
 
   const educationAccountBtn = document.getElementById("education-account-btn")
   if (educationAccountBtn) {
     educationAccountBtn.addEventListener("click", () => {
-      sendEmailWithSelectedAccount("education")
+      sendEmailWithSelectedAccount("education", emailData)
     })
   }
 
@@ -230,9 +198,6 @@ function closePopup() {
 
   // Reset popup flag
   popupCurrentlyShown = false
-
-  // Set cooldown to prevent immediate re-detection
-  lastEmailSentTimestamp = Date.now()
 }
 
 // Function to add styles
@@ -409,39 +374,58 @@ function addStyles() {
 }
 
 // Function to send email with selected account
-function sendEmailWithSelectedAccount(accountType) {
+function sendEmailWithSelectedAccount(accountType, emailData) {
   console.log(`Sending email with ${accountType} account`)
 
-  // Update the timestamp to prevent immediate re-detection
-  lastEmailSentTimestamp = Date.now()
+  // Close popup before sending
+  closePopup()
 
-  // Get the stored email data
-  chrome.storage.local.get(["currentEmailData"], (result) => {
-    const emailData = result.currentEmailData
+  // Show sending toast
+  showToast("Sending email data to backend...", "info")
 
-    if (!emailData) {
-      showToast("No email data found. Please try again later.", "error")
-      closePopup()
+  // Get account credentials
+  chrome.storage.sync.get([accountType + "Account"], (result) => {
+    const account = result[accountType + "Account"]
+
+    if (!account || !account.email || !account.password) {
+      showToast("Email account not configured. Please set up your accounts in the extension options.", "error")
       return
     }
 
-    // Close popup before sending to prevent multiple popups
-    closePopup()
+    // Prepare data to send to backend
+    const dataToSend = {
+      to: emailData.to,
+      subject: emailData.subject,
+      body: emailData.body,
+      email: account.email,
+      password: account.password,
+      accountType: accountType,
+    }
 
-    // Show sending toast
-    showToast("Sending email...", "info")
+    console.log("Sending data to backend:", dataToSend)
 
-    // Send message to background script to handle email sending
-    chrome.runtime.sendMessage({ action: "sendEmail", emailData, accountType }, (response) => {
-      console.log("Received response from background script:", response)
-
-      // Show success or error toast
-      if (response && response.success) {
-        showToast(response.message || "Email sent successfully!", "success")
-      } else {
-        showToast(response?.message || "Failed to send email. Please try again.", "error")
-      }
+    // Send data to backend
+    fetch(BACKEND_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dataToSend),
     })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+        return response.json()
+      })
+      .then((data) => {
+        console.log("Backend response:", data)
+        showToast("Email data sent to backend successfully!", "success")
+      })
+      .catch((error) => {
+        console.error("Error sending to backend:", error)
+        showToast("Failed to send email data to backend: " + error.message, "error")
+      })
   })
 }
 
@@ -490,35 +474,23 @@ function showToast(message, type = "info") {
   }, 5000)
 }
 
-// Add a click event listener to detect when the user clicks the "sendEmail" button
-document.addEventListener("click", (event) => {
-  // Check if the clicked element is a button or has text content containing "sendEmail"
-  if (
-    event.target &&
-    (event.target.tagName === "BUTTON" || (event.target.textContent && event.target.textContent.includes("sendEmail")))
-  ) {
-    console.log("Detected click on sendEmail element")
-    setTimeout(detectEmailData, 500)
-  }
-})
-
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "manualDetection") {
     console.log("Received manual detection request")
-    // Force detection even if cooldown is active
-    lastEmailSentTimestamp = 0
-    lastProcessedContent = "" // Reset processed content to force detection
-    popupCurrentlyShown = false // Reset popup flag
+    // Reset flags for manual detection
+    popupCurrentlyShown = false
+    processingInProgress = false
+    // Clear processed messages to force re-detection
+    processedMessageIds.clear()
     detectEmailData()
     sendResponse({ success: true, message: "Manual detection triggered" })
   }
 
   if (request.action === "detectEmail") {
-    // Force detection even if cooldown is active
-    lastEmailSentTimestamp = 0
-    lastProcessedContent = "" // Reset processed content to force detection
-    popupCurrentlyShown = false // Reset popup flag
+    // Reset flags for detection
+    popupCurrentlyShown = false
+    processingInProgress = false
     detectEmailData()
     sendResponse({ success: true })
   }
@@ -528,11 +500,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Set up a MutationObserver to detect when new messages are added
 const observer = new MutationObserver((mutations) => {
-  // Check if we're in the cooldown period
-  const now = Date.now()
-  if (now - lastEmailSentTimestamp >= DETECTION_COOLDOWN && !popupCurrentlyShown) {
-    // Wait a bit for the DOM to settle
-    setTimeout(detectEmailData, 500)
+  if (!popupCurrentlyShown && !processingInProgress) {
+    // Check if any new message elements were added
+    let newMessagesAdded = false
+
+    for (const mutation of mutations) {
+      if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if this is a message element or contains message elements
+            if (
+              node.classList &&
+              (node.classList.contains("markdown-content") ||
+                node.classList.contains("prose") ||
+                node.classList.contains("message-content"))
+            ) {
+              newMessagesAdded = true
+              break
+            }
+
+            // Check for message elements inside the added node
+            const messageElements = node.querySelectorAll(
+              '.markdown-content, .prose, div[data-message-author-role="assistant"], .text-message, .message-content',
+            )
+
+            if (messageElements.length > 0) {
+              newMessagesAdded = true
+              break
+            }
+          }
+        }
+      }
+
+      if (newMessagesAdded) break
+    }
+
+    if (newMessagesAdded) {
+      console.log("New message elements detected, checking for email data")
+      setTimeout(detectEmailData, 500) // Small delay to ensure content is fully rendered
+    }
   }
 })
 
@@ -545,7 +551,7 @@ observer.observe(document.body, {
 // Initial check when the script loads
 setTimeout(() => {
   detectEmailData()
-}, 1000)
+}, 1500)
 
 // Notify that content script is loaded
 chrome.runtime.sendMessage({ action: "contentScriptLoaded" })
