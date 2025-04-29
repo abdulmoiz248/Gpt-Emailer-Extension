@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       from: data.email,
       to: data.to,
       subject: data.subject,
-      text: data.body,
+      text: data.body+"\n\n [Notice:This email was written and directly sent by the Chatgpt.Incase of any error,kindly ignore it]",
       html: data.body.replace(/\n/g, "<br>"),
     }
 

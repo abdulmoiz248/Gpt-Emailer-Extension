@@ -225,174 +225,89 @@ function addStyles() {
 
   const style = document.createElement("style")
   style.id = "gpt-emailer-styles"
-  style.textContent = `
-    .gpt-emailer-popup {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.85);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      font-family: Arial, sans-serif;
-    }
-    
-    .gpt-emailer-popup-content {
-      background-color: #ffffff;
-      padding: 28px;
-      border-radius: 12px;
-      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
-      max-width: 550px;
-      width: 90%;
-      text-align: center;
-      border: 3px solid #10a37f;
-      position: relative;
-    }
-    
-    .gpt-emailer-popup-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #f0f0f0;
-      padding-bottom: 12px;
-    }
-    
-    .gpt-emailer-popup h2 {
-      margin: 0;
-      color: #10a37f;
-      font-size: 28px;
-      font-weight: bold;
-    }
-    
-    .gpt-emailer-close-btn {
-      background: #f0f0f0;
-      border: none;
-      color: #333;
-      font-size: 28px;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      transition: all 0.2s;
-    }
-    
-    .gpt-emailer-close-btn:hover {
-      background-color: #e0e0e0;
-      color: #000;
-      transform: scale(1.1);
-    }
-    
-    .gpt-emailer-email-preview {
-      background-color: #f5f5f5;
-      border-radius: 8px;
-      padding: 20px;
-      margin: 20px 0;
-      text-align: left;
-      border: 1px solid #ddd;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .gpt-emailer-email-preview div {
-      margin-bottom: 12px;
-      font-size: 16px;
-    }
-    
-    .gpt-emailer-email-body {
-      max-height: 150px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      padding: 12px;
-      background-color: #ffffff;
-      border-radius: 6px;
-      border: 1px solid #eee;
-    }
-    
-    .email-body-content {
-      white-space: pre-wrap;
-      line-height: 1.5;
-    }
-    
-    .gpt-emailer-account-buttons {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      margin: 24px 0;
-    }
-    
-    .gpt-emailer-btn {
-      padding: 16px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 18px;
-      font-weight: bold;
-      transition: all 0.2s;
-    }
-    
-    .gpt-emailer-account-buttons .gpt-emailer-btn {
-      background-color: #10a37f;
-      color: white;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    }
-    
-    .gpt-emailer-account-buttons .gpt-emailer-btn:hover {
-      background-color: #0d8c6d;
-      transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-    }
-    
-    .gpt-emailer-cancel-btn {
-      background-color: #f0f0f0;
-      color: #333;
-      margin-top: 12px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    
-    .gpt-emailer-cancel-btn:hover {
-      background-color: #e0e0e0;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-    
-    .gpt-emailer-toast-container {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      z-index: 10001;
-    }
-    
-    .gpt-emailer-toast {
-      padding: 16px 20px;
-      margin-top: 12px;
-      border-radius: 8px;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      max-width: 350px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-      animation: gpt-emailer-toast-fade-in 0.3s ease-out forwards;
-    }
-    
-    @keyframes gpt-emailer-toast-fade-in {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes gpt-emailer-toast-fade-out {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(-20px); }
-    }
-  `
+  style.textContent =`
+  .gpt-emailer-email-preview {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 24px 0;
+  text-align: left;
+  border: 1px solid #cccccc;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  color: #333333;
+  font-size: 16px;
+}
 
+.gpt-emailer-email-preview div {
+  margin-bottom: 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333333;
+}
+
+.gpt-emailer-email-body {
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  padding: 16px;
+  background-color: #ffffff;
+  color: #333333;
+  border-radius: 8px;
+  border: 1px solid #dddddd;
+  scrollbar-width: thin;
+  scrollbar-color: #10a37f #f0f0f0;
+}
+
+.email-body-content {
+  white-space: pre-wrap;
+  background-color: #ffffff;
+  color: #333333;
+  line-height: 1.6;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+}
+
+/* Email preview specific elements */
+.gpt-emailer-email-to,
+.gpt-emailer-email-subject {
+  padding: 8px 0;
+  border-bottom: 1px solid #eaeaea;
+  display: flex;
+  align-items: center;
+}
+
+.gpt-emailer-email-to strong,
+.gpt-emailer-email-subject strong {
+  min-width: 80px;
+  font-weight: 600;
+  color: #555555;
+}
+
+.gpt-emailer-account-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.gpt-emailer-account-buttons .gpt-emailer-btn {
+  background-color: #10a37f;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 163, 127, 0.3);
+  font-weight: 600;
+  font-size: 18px;
+  padding: 16px 24px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.gpt-emailer-account-buttons .gpt-emailer-btn:hover {
+  background-color: #0d8c6d;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 163, 127, 0.4);
+}`
   document.head.appendChild(style)
 }
 
