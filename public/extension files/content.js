@@ -424,9 +424,9 @@ function sendEmailWithSelectedAccount(accountType, emailData) {
       password: account.password,
       accountType: accountType,
     }
-
+     
     console.log("Sending data to backend:", { ...dataToSend, password: "***" })
-
+         
     // Send data to backend
     fetch(BACKEND_URL, {
       method: "POST",
