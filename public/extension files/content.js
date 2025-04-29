@@ -1,5 +1,5 @@
 // GPT Emailer Content Script
-console.log("GPT Emailer content script loaded v11")
+console.log("GPT Emailer content script loaded v10")
 
 // Global variables for state management
 const processedMessageIds = new Set() // Track which messages we've already processed
@@ -119,9 +119,6 @@ function showAccountSelectionPopup(emailData) {
     existingPopup.remove()
   }
 
-  // Format the body text with proper line breaks for display
-  const formattedBody = emailData.body.replace(/\n/g, "<br>")
-
   // Create popup container
   const popup = document.createElement("div")
   popup.id = "gpt-emailer-popup"
@@ -131,63 +128,22 @@ function showAccountSelectionPopup(emailData) {
   popup.innerHTML = `
     <div class="gpt-emailer-popup-content">
       <div class="gpt-emailer-popup-header">
-        <div class="gpt-emailer-header-left">
-          <div class="gpt-emailer-logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22 8.608V16.75C22 17.992 20.992 19 19.75 19H4.25C3.008 19 2 17.992 2 16.75V8.608L11.526 13.79C11.826 13.966 12.174 13.966 12.474 13.79L22 8.608Z" fill="#10A37F"/>
-              <path d="M22 7.25V7.392L12.474 12.574C12.174 12.75 11.826 12.75 11.526 12.574L2 7.392V7.25C2 6.008 3.008 5 4.25 5H19.75C20.992 5 22 6.008 22 7.25Z" fill="#10A37F"/>
-            </svg>
-          </div>
-          <h2>Send Email</h2>
-        </div>
-        <button id="gpt-emailer-close-btn" class="gpt-emailer-close-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+        <h2>Send Email</h2>
+        <button id="gpt-emailer-close-btn" class="gpt-emailer-close-btn">&times;</button>
       </div>
       
       <div class="gpt-emailer-email-preview">
-        <div class="gpt-emailer-preview-field">
-          <div class="gpt-emailer-field-label">To:</div>
-          <div class="gpt-emailer-field-value">${emailData.to}</div>
-        </div>
-        <div class="gpt-emailer-preview-field">
-          <div class="gpt-emailer-field-label">Subject:</div>
-          <div class="gpt-emailer-field-value">${emailData.subject}</div>
-        </div>
-        <div class="gpt-emailer-preview-field gpt-emailer-body-field">
-          <div class="gpt-emailer-field-label">Body:</div>
-          <div class="gpt-emailer-field-value gpt-emailer-email-body">${formattedBody}</div>
-        </div>
+        <div><strong>To:</strong> ${emailData.to}</div>
+        <div><strong>Subject:</strong> ${emailData.subject}</div>
+        <div class="gpt-emailer-email-body"><strong>Body:</strong> ${emailData.body}</div>
       </div>
       
-      <div class="gpt-emailer-account-selection">
-        <p>Choose which account to send from:</p>
-        <div class="gpt-emailer-account-buttons">
-          <button id="personal-account-btn" class="gpt-emailer-btn gpt-emailer-personal-btn">
-            <div class="gpt-emailer-btn-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <span>Personal Account</span>
-          </button>
-          <button id="education-account-btn" class="gpt-emailer-btn gpt-emailer-education-btn">
-            <div class="gpt-emailer-btn-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M22 10V15C22 17.5 20 19.5 17.5 19.5H6.5C4 19.5 2 17.5 2 15V10C2 7.5 4 5.5 6.5 5.5H17.5C20 5.5 22 7.5 22 10Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M2 10H22" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <span>Education Account</span>
-          </button>
-        </div>
-        <button id="gpt-emailer-cancel-btn" class="gpt-emailer-btn gpt-emailer-cancel-btn">Cancel</button>
+      <p>Choose which account to send from:</p>
+      <div class="gpt-emailer-account-buttons">
+        <button id="personal-account-btn" class="gpt-emailer-btn">Personal Account</button>
+        <button id="education-account-btn" class="gpt-emailer-btn">Education Account</button>
       </div>
+      <button id="gpt-emailer-cancel-btn" class="gpt-emailer-btn gpt-emailer-cancel-btn">Cancel</button>
     </div>
   `
 
@@ -226,11 +182,6 @@ function showAccountSelectionPopup(emailData) {
   // Add styles for the popup
   addStyles()
 
-  // Add animation class after a small delay to trigger the animation
-  setTimeout(() => {
-    popup.classList.add("gpt-emailer-popup-visible")
-  }, 10)
-
   // Also close popup when clicking outside
   popup.addEventListener("click", (event) => {
     if (event.target === popup) {
@@ -242,15 +193,7 @@ function showAccountSelectionPopup(emailData) {
 function closePopup() {
   const popup = document.getElementById("gpt-emailer-popup")
   if (popup) {
-    // Add closing animation
-    popup.classList.add("gpt-emailer-popup-closing")
-
-    // Remove popup after animation completes
-    setTimeout(() => {
-      if (popup.parentNode) {
-        popup.parentNode.removeChild(popup)
-      }
-    }, 300)
+    popup.remove()
   }
 
   // Reset popup flag
@@ -265,16 +208,6 @@ function addStyles() {
   const style = document.createElement("style")
   style.id = "gpt-emailer-styles"
   style.textContent = `
-    @keyframes gpt-emailer-fade-in {
-      from { opacity: 0; transform: translateY(-20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    @keyframes gpt-emailer-fade-out {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(20px); }
-    }
-    
     .gpt-emailer-popup {
       position: fixed;
       top: 0;
@@ -286,76 +219,47 @@ function addStyles() {
       justify-content: center;
       align-items: center;
       z-index: 10000;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    
-    .gpt-emailer-popup-visible {
-      opacity: 1;
-    }
-    
-    .gpt-emailer-popup-closing {
-      opacity: 0;
+      font-family: Arial, sans-serif;
     }
     
     .gpt-emailer-popup-content {
       background-color: #ffffff;
       padding: 28px;
-      border-radius: 16px;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
-      max-width: 600px;
+      border-radius: 12px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+      max-width: 550px;
       width: 90%;
       text-align: center;
-      border: 2px solid #10a37f;
+      border: 3px solid #10a37f;
       position: relative;
-      animation: gpt-emailer-fade-in 0.3s ease-out forwards;
-    }
-    
-    .gpt-emailer-popup-closing .gpt-emailer-popup-content {
-      animation: gpt-emailer-fade-out 0.3s ease-in forwards;
     }
     
     .gpt-emailer-popup-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       border-bottom: 2px solid #f0f0f0;
-      padding-bottom: 16px;
-    }
-    
-    .gpt-emailer-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    
-    .gpt-emailer-logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #f0f8f4;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      padding: 8px;
+      padding-bottom: 12px;
     }
     
     .gpt-emailer-popup h2 {
       margin: 0;
       color: #10a37f;
-      font-size: 24px;
-      font-weight: 600;
+      font-size: 28px;
+      font-weight: bold;
     }
     
     .gpt-emailer-close-btn {
-      background: transparent;
+      background: #f0f0f0;
       border: none;
-      color: #666;
-      font-size: 24px;
+      color: #333;
+      font-size: 28px;
       cursor: pointer;
-      padding: 8px;
+      padding: 0;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -364,120 +268,69 @@ function addStyles() {
     }
     
     .gpt-emailer-close-btn:hover {
-      background-color: #f0f0f0;
+      background-color: #e0e0e0;
       color: #000;
       transform: scale(1.1);
     }
     
     .gpt-emailer-email-preview {
-      background-color: #f9f9f9;
-      border-radius: 12px;
-      padding: 24px;
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 20px;
       margin: 20px 0;
       text-align: left;
-      border: 1px solid #e0e0e0;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid #ddd;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
     
-    .gpt-emailer-preview-field {
-      margin-bottom: 16px;
-      display: flex;
-    }
-    
-    .gpt-emailer-field-label {
-      font-weight: 600;
-      color: #333;
-      width: 80px;
-      flex-shrink: 0;
-    }
-    
-    .gpt-emailer-field-value {
-      color: #444;
-      flex-grow: 1;
-    }
-    
-    .gpt-emailer-body-field {
-      display: block;
-    }
-    
-    .gpt-emailer-body-field .gpt-emailer-field-label {
-      margin-bottom: 8px;
+    .gpt-emailer-email-preview div {
+      margin-bottom: 12px;
+      font-size: 16px;
     }
     
     .gpt-emailer-email-body {
       max-height: 150px;
       overflow-y: auto;
       white-space: pre-wrap;
-      padding: 16px;
+      padding: 12px;
       background-color: #ffffff;
-      border-radius: 8px;
-      border: 1px solid #e0e0e0;
-      line-height: 1.5;
-      font-size: 15px;
-    }
-    
-    .gpt-emailer-account-selection p {
-      font-size: 16px;
-      color: #333;
-      margin-bottom: 16px;
-      font-weight: 500;
+      border-radius: 6px;
+      border: 1px solid #eee;
     }
     
     .gpt-emailer-account-buttons {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       margin: 24px 0;
     }
     
     .gpt-emailer-btn {
       padding: 16px 20px;
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: bold;
       transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
     
-    .gpt-emailer-btn-icon {
-      margin-right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .gpt-emailer-personal-btn {
+    .gpt-emailer-account-buttons .gpt-emailer-btn {
       background-color: #10a37f;
       color: white;
-      box-shadow: 0 4px 12px rgba(16, 163, 127, 0.3);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
     
-    .gpt-emailer-personal-btn:hover {
+    .gpt-emailer-account-buttons .gpt-emailer-btn:hover {
       background-color: #0d8c6d;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(16, 163, 127, 0.4);
-    }
-    
-    .gpt-emailer-education-btn {
-      background-color: #4285f4;
-      color: white;
-      box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
-    }
-    
-    .gpt-emailer-education-btn:hover {
-      background-color: #3367d6;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(66, 133, 244, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
     }
     
     .gpt-emailer-cancel-btn {
       background-color: #f0f0f0;
       color: #333;
-      margin-top: 8px;
+      margin-top: 12px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
     
@@ -497,40 +350,13 @@ function addStyles() {
     .gpt-emailer-toast {
       padding: 16px 20px;
       margin-top: 12px;
-      border-radius: 12px;
+      border-radius: 8px;
       color: white;
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 16px;
+      font-weight: bold;
       max-width: 350px;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
       animation: gpt-emailer-toast-fade-in 0.3s ease-out forwards;
-      display: flex;
-      align-items: center;
-    }
-    
-    .gpt-emailer-toast::before {
-      content: '';
-      width: 20px;
-      height: 20px;
-      margin-right: 12px;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: contain;
-    }
-    
-    .gpt-emailer-toast-success {
-      background-color: #10a37f;
-      border-left: 4px solid #0d8c6d;
-    }
-    
-    .gpt-emailer-toast-error {
-      background-color: #e53935;
-      border-left: 4px solid #c62828;
-    }
-    
-    .gpt-emailer-toast-info {
-      background-color: #2196f3;
-      border-left: 4px solid #1976d2;
     }
     
     @keyframes gpt-emailer-toast-fade-in {
@@ -541,21 +367,6 @@ function addStyles() {
     @keyframes gpt-emailer-toast-fade-out {
       from { opacity: 1; transform: translateY(0); }
       to { opacity: 0; transform: translateY(-20px); }
-    }
-    
-    @media (max-width: 768px) {
-      .gpt-emailer-popup-content {
-        width: 95%;
-        padding: 20px;
-      }
-      
-      .gpt-emailer-email-preview {
-        padding: 16px;
-      }
-      
-      .gpt-emailer-field-label {
-        width: 60px;
-      }
     }
   `
 
@@ -636,6 +447,18 @@ function showToast(message, type = "info") {
   const toast = document.createElement("div")
   toast.className = `gpt-emailer-toast gpt-emailer-toast-${type}`
   toast.textContent = message
+
+  // Set background color based on type
+  if (type === "success") {
+    toast.style.backgroundColor = "#10a37f"
+    toast.style.border = "1px solid #0d8c6d"
+  } else if (type === "error") {
+    toast.style.backgroundColor = "#e53935"
+    toast.style.border = "1px solid #c62828"
+  } else {
+    toast.style.backgroundColor = "#2196f3"
+    toast.style.border = "1px solid #1976d2"
+  }
 
   // Add toast to container
   toastContainer.appendChild(toast)
