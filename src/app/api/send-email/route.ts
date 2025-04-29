@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     } else if (data.accountType === "education") {
       // Education email configuration (e.g., Outlook/Office365)
       transportConfig = {
-        service: "outlook", // Change based on your education email provider
+        service: "gmail", // Change based on your education email provider
         auth: {
           user: data.email,
           pass: data.password,

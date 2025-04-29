@@ -5,7 +5,7 @@ console.log("GPT Emailer content script loaded v10")
 const processedMessageIds = new Set() // Track which messages we've already processed
 let popupCurrentlyShown = false
 let processingInProgress = false
-const BACKEND_URL = "http://localhost:3000" // Backend URL to send email data
+const BACKEND_URL = "https://gpt-emailer-extension.vercel.app/api/send-email" // Backend URL to send email data
 
 // Function to detect and extract email data from ChatGPT responses
 function detectEmailData() {
