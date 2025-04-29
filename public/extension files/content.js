@@ -422,7 +422,7 @@ function sendEmailWithSelectedAccount(accountType, emailData) {
       body: emailData.body,
       email: account.email,
       password: account.password,
-    
+      accountType: accountType,
     }
 
     console.log("Sending data to backend:", { ...dataToSend, password: "***" })
@@ -571,10 +571,23 @@ observer.observe(document.body, {
   subtree: true,
 })
 
+// Modify the initial detection delay to ensure it doesn't run too early:
+
 // Initial check when the script loads - with a longer delay to ensure page is fully loaded
 setTimeout(() => {
+  console.log("Running initial email detection check")
   detectEmailData()
-}, 2000)
+}, 3000)
 
 // Notify that content script is loaded
 chrome.runtime.sendMessage({ action: "contentScriptLoaded" })
+
+// Add a listener for the ping message at the end of the file:
+
+// Listen for ping to check if content script is loaded
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "ping") {
+    sendResponse({ status: "alive" })
+  }
+  return true
+})

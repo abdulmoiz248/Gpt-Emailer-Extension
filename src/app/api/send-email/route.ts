@@ -14,19 +14,17 @@ export async function POST(request: Request) {
     // Log the request (excluding sensitive data)
     console.log(`Received email request to: ${data.to}, subject: ${data.subject}`)
 
-    // Configure email transport based on account type
-    let transportConfig = {
-        service: "gmail",
-        auth: {
-          user: data.email,
-          pass: data.password, // App password for Gmail
-        },
-      
-    }
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: process.env.EMAIL_USER, // Your email address
+        pass: process.env.EMAIL_PASS, // Your email password or app password
+      },
+    });
  
 
-    // Create transporter
-    const transporter = nodemailer.createTransport(transportConfig)
+
+   
 
     // Set up email options
     const mailOptions = {
@@ -61,3 +59,8 @@ export async function POST(request: Request) {
     )
   }
 }
+
+
+   
+
+  
