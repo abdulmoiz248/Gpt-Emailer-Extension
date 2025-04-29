@@ -15,29 +15,15 @@ export async function POST(request: Request) {
     console.log(`Received email request to: ${data.to}, subject: ${data.subject}`)
 
     // Configure email transport based on account type
-    let transportConfig
-
-    if (data.accountType === "personal") {
-      // Gmail configuration for personal account
-      transportConfig = {
+    let transportConfig = {
         service: "gmail",
         auth: {
           user: data.email,
           pass: data.password, // App password for Gmail
         },
-      }
-    } else if (data.accountType === "education") {
-      // Education email configuration (e.g., Outlook/Office365)
-      transportConfig = {
-        service: "gmail", // Change based on your education email provider
-        auth: {
-          user: data.email,
-          pass: data.password,
-        },
-      }
-    } else {
-      return NextResponse.json({ error: "Invalid account type" }, { status: 400 })
+      
     }
+ 
 
     // Create transporter
     const transporter = nodemailer.createTransport(transportConfig)

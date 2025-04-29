@@ -25,6 +25,11 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0] && (tabs[0].url.includes("chat.openai.com") || tabs[0].url.includes("chatgpt.com"))) {
         chrome.tabs.sendMessage(tabs[0].id, { action: "manualDetection" }, (response) => {
+          if (chrome.runtime.lastError) {
+            showStatus("Content script not loaded. Try reinjecting the script.", "error")
+            return
+          }
+
           if (response && response.success) {
             showStatus("Email detection triggered!", "success")
           } else {

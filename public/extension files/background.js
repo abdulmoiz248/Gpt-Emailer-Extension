@@ -1,5 +1,5 @@
 // Background script for GPT Emailer
-console.log("GPT Emailer background script loaded v7")
+console.log("GPT Emailer background script loaded v8")
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -27,43 +27,42 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return
       }
 
-      // Log the email sending attempt
+      // Log the email sending attempt (without password)
       console.log(`Attempting to send email from ${account.email} to ${emailData.to}`)
       console.log(`Subject: ${emailData.subject}`)
 
-      // Use fetch API instead of XMLHttpRequest (which doesn't work in service workers)
+      // Send to backend API instead of using smtpjs
+      const backendUrl = "https://gpt-emailer-extension.vercel.app/api/send-email"
+
       const formData = {
-        Host: "smtp.gmail.com",
-        Username: account.email,
-        Password: account.password,
-        To: emailData.to,
-        From: account.email,
-        Subject: emailData.subject,
-        Body: emailData.body,
-        Action: "Send",
-        nocache: Math.floor(1e6 * Math.random() + 1),
+        to: emailData.to,
+        subject: emailData.subject,
+        body: emailData.body,
+        email: account.email,
+        password: account.password,
+        accountType: accountType,
       }
 
-      fetch("https://smtpjs.com/v3/smtpjs.aspx?", {
+      fetch(backendUrl, {
         method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       })
-        .then((response) => response.text())
+        .then((response) => response.json())
         .then((result) => {
           console.log("Email sending result:", result)
 
-          if (result === "OK") {
+          if (result.success) {
             sendResponse({
               success: true,
-              message: `Email sent successfully from ${account.email}!`,
+              message: result.message || `Email sent successfully from ${account.email}!`,
             })
           } else {
             sendResponse({
               success: false,
-              message: "Failed to send email: " + result,
+              message: result.message || "Failed to send email",
             })
           }
         })

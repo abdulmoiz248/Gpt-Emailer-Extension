@@ -32,11 +32,21 @@ function loadAccounts() {
 
 // Function to save account
 function saveAccount(type) {
-  const email = document.getElementById(`${type}-email`).value
-  const password = document.getElementById(`${type}-password`).value
+  const email = document.getElementById(`${type}-email`).value.trim()
+  const password = document.getElementById(`${type}-password`).value.trim()
 
-  if (!email || !password) {
-    showStatus("Please enter both email and password", "error")
+  if (!email) {
+    showStatus("Please enter an email address", "error")
+    return
+  }
+
+  if (!password) {
+    showStatus("Please enter an app password", "error")
+    return
+  }
+
+  if (!validateEmail(email)) {
+    showStatus("Please enter a valid email address", "error")
     return
   }
 
@@ -47,6 +57,12 @@ function saveAccount(type) {
   chrome.storage.sync.set(data, () => {
     showStatus(`${type.charAt(0).toUpperCase() + type.slice(1)} account saved successfully`, "success")
   })
+}
+
+// Function to validate email format
+function validateEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return re.test(email)
 }
 
 // Function to show status message

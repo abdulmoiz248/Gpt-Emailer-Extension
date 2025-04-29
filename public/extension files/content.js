@@ -1,5 +1,5 @@
 // GPT Emailer Content Script
-console.log("GPT Emailer content script loaded v10")
+console.log("GPT Emailer content script loaded v11")
 
 // Global variables for state management
 const processedMessageIds = new Set() // Track which messages we've already processed
@@ -22,14 +22,15 @@ function detectEmailData() {
     )
 
     messages.forEach((message) => {
+      // Generate a more reliable unique identifier for the message
+      const messageContent = message.textContent || ""
+      const messageId = generateMessageId(message, messageContent)
+
       // Skip if we've already processed this message
-      const messageId = message.id || message.dataset.messageId || getUniqueIdentifier(message)
       if (processedMessageIds.has(messageId)) return
 
-      const content = message.textContent || ""
-
-      // Check if this message contains the sendEmail keyword
-      if (content.includes("sendEmail")) {
+      // Check if this message contains the sendEmail keyword at the beginning
+      if (messageContent.trim().startsWith("sendEmail")) {
         console.log("Found NEW message with sendEmail keyword")
 
         // Mark this message as processed immediately to prevent duplicate processing
@@ -37,9 +38,9 @@ function detectEmailData() {
 
         // Try to find JSON in the message
         const jsonMatch =
-          content.match(/sendEmail\s*```(?:json)?\s*(\{[\s\S]*?\})\s*```/) ||
-          content.match(/sendEmail\s*(\{[\s\S]*?\})/) ||
-          content.match(/```(?:json)?\s*(\{[\s\S]*?"to"[\s\S]*?\})\s*```/)
+          messageContent.match(/sendEmail\s*```(?:json)?\s*(\{[\s\S]*?\})\s*```/) ||
+          messageContent.match(/sendEmail\s*(\{[\s\S]*?\})/) ||
+          messageContent.match(/```(?:json)?\s*(\{[\s\S]*?"to"[\s\S]*?\})\s*```/)
 
         if (jsonMatch && jsonMatch[1]) {
           try {
@@ -98,12 +99,29 @@ function detectEmailData() {
   }
 }
 
-// Generate a unique identifier for a message element
-function getUniqueIdentifier(element) {
-  // Try to create a unique ID based on content and position
-  const content = element.textContent || ""
-  const position = Array.from(element.parentNode.children).indexOf(element)
-  return `msg_${content.substring(0, 50).replace(/\s+/g, "_")}_${position}`
+// Generate a more reliable unique identifier for a message element
+function generateMessageId(element, content) {
+  // Create a hash from the first 100 chars of content to make it more unique
+  const contentHash = hashString(content.substring(0, 100))
+
+  // Get position in parent to help with uniqueness
+  const position = Array.from(element.parentNode?.children || []).indexOf(element)
+
+  // Use any existing IDs if available
+  const elementId = element.id || element.dataset.messageId || ""
+
+  return `msg_${elementId}_${contentHash}_${position}`
+}
+
+// Simple string hashing function
+function hashString(str) {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16)
 }
 
 // Function to show the account selection popup
@@ -135,7 +153,7 @@ function showAccountSelectionPopup(emailData) {
       <div class="gpt-emailer-email-preview">
         <div><strong>To:</strong> ${emailData.to}</div>
         <div><strong>Subject:</strong> ${emailData.subject}</div>
-        <div class="gpt-emailer-email-body"><strong>Body:</strong> ${emailData.body}</div>
+        <div class="gpt-emailer-email-body"><strong>Body:</strong> <div class="email-body-content">${emailData.body.replace(/\n/g, "<br>")}</div></div>
       </div>
       
       <p>Choose which account to send from:</p>
@@ -298,6 +316,11 @@ function addStyles() {
       border: 1px solid #eee;
     }
     
+    .email-body-content {
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    
     .gpt-emailer-account-buttons {
       display: flex;
       flex-direction: column;
@@ -399,10 +422,10 @@ function sendEmailWithSelectedAccount(accountType, emailData) {
       body: emailData.body,
       email: account.email,
       password: account.password,
-      accountType: accountType,
+    
     }
 
-    console.log("Sending data to backend:", dataToSend)
+    console.log("Sending data to backend:", { ...dataToSend, password: "***" })
 
     // Send data to backend
     fetch(BACKEND_URL, {
@@ -420,7 +443,7 @@ function sendEmailWithSelectedAccount(accountType, emailData) {
       })
       .then((data) => {
         console.log("Backend response:", data)
-        showToast("Email data sent to backend successfully!", "success")
+        showToast(data.message || "Email sent successfully!", "success")
       })
       .catch((error) => {
         console.error("Error sending to backend:", error)
@@ -548,10 +571,10 @@ observer.observe(document.body, {
   subtree: true,
 })
 
-// Initial check when the script loads
+// Initial check when the script loads - with a longer delay to ensure page is fully loaded
 setTimeout(() => {
   detectEmailData()
-}, 1500)
+}, 2000)
 
 // Notify that content script is loaded
 chrome.runtime.sendMessage({ action: "contentScriptLoaded" })

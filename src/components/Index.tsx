@@ -113,8 +113,7 @@ const Index = () => {
   "subject": "Email Subject",
   "body": "Email body content",
   "email": "your-email@gmail.com",
-  "password": "your-app-password",
-  "accountType": "personal" // or "education"
+  "password": "your-app-password"
 }`}
               </motion.pre>
             </motion.div>
