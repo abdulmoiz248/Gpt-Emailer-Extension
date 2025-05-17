@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GPT Emailer Extension – Chrome Plugin for Smart Gmail Automation ✉️
 
-## Getting Started
+**GPT Emailer Extension** is a Chrome extension that allows users to generate and send context-aware emails using OpenAI's GPT model, integrated directly with Gmail APIs.
 
-First, run the development server:
+## 🔍 What It Does
+
+* 🧠 Uses GPT to generate smart email content based on context
+* 📩 Sends emails directly via Gmail API
+* 🧩 Fully functional Chrome Extension with popup, background, and content scripts
+
+
+## 🛠️ Tech Stack
+
+* **Frontend:** HTML, Tailwind CSS, Vanilla JS
+* **GPT Integration:** OpenAI API (browser context)
+* **Email Service:** Nodemailer
+* **Chrome APIs:** chrome.identity, chrome.runtime, chrome.storage
+
+
+
+
+## 🧪 Setup Instructions
+
+1. Clone the repo:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/abdulmoiz248/Gpt-Emailer-Extension
+cd Gpt-Emailer-Extension
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Replace credentials:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+   * Add your Google Client ID in `background.js`
+   * Ensure OAuth consent is configured properly for Chrome Extensions
+3. Load the extension:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   * Go to `chrome://extensions`
+   * Enable Developer Mode
+   * Click "Load unpacked" and select the project directory
 
-## Learn More
+## ⚠️ Notes
 
-To learn more about Next.js, take a look at the following resources:
+* Make sure OAuth scopes are correctly set for Gmail access
+* Extension only works on domains where permissions are granted (e.g., Gmail)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 💡 Use Case
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Perfect for freelancers, professionals, or businesses who want to quickly auto-generate email replies, marketing drafts, or formal responses directly from the browser.
 
-## Deploy on Vercel
+## 🤝 Contributions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Feel free to fork and enhance! Add multi-language support, smarter prompt templates, or scheduled email features.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+Built with ☕, GPT, and patience by Abdul Moiz
